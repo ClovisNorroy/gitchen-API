@@ -1,0 +1,25 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+menu:
+    path: /api/menu
+    controller: App\Controller\MenuController::getMenu
+    methods: GET
+
+save_menu:
+    path: /api/menu/save
+    controller: App\Controller\MenuController::saveMenu
+    methods: POST
+
+signup:
+    path: /api/signup
+    controller: App\Controller\RegistrationController::signup
+    methods: POST
+
+api_login_check:
+    path: /api/login_check
+api_logout:
+    path: /api/logout
