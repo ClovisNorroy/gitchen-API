@@ -4,6 +4,11 @@ controllers:
         namespace: App\Controller
     type: attribute
 
+service_status:
+    path: /service/status
+    controller: App\Controller\ServiceStatusController::ping
+    methods: GET
+
 menu:
     path: /api/menu
     controller: App\Controller\MenuController::getMenu
