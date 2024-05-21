@@ -36,9 +36,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinTable(name:"user_menu")]
     private Collection $menu;
 
+    #[ORM\ManyToMany(targetEntity: GroceryList::class, mappedBy: 'users')]
+    private Collection $groceryLists;
+
     public function __construct()
     {
         $this->menu = new ArrayCollection();
+        $this->groceryLists = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -143,6 +147,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeMenu(Menu $menu): static
     {
         $this->menu->removeElement($menu);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, GroceryList>
+     */
+    public function getGroceryLists(): Collection
+    {
+        return $this->groceryLists;
+    }
+
+    public function addGroceryList(GroceryList $groceryList): static
+    {
+        if (!$this->groceryLists->contains($groceryList)) {
+            $this->groceryLists->add($groceryList);
+            $groceryList->addUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGroceryList(GroceryList $groceryList): static
+    {
+        if ($this->groceryLists->removeElement($groceryList)) {
+            $groceryList->removeUser($this);
+        }
 
         return $this;
     }
