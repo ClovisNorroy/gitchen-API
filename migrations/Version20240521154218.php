@@ -20,7 +20,7 @@ final class Version20240521154218 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE grocery_list (id INT AUTO_INCREMENT NOT NULL, list JSON DEFAULT NULL COMMENT \'(DC2Type:json)\', PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE `utf8_unicode_ci` ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE grocery_list (id INT AUTO_INCREMENT NOT NULL, list ARRAY DEFAULT NULL COMMENT \'(DC2Type:array)\', PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE `utf8_unicode_ci` ENGINE = InnoDB');
     }
 
     public function down(Schema $schema): void

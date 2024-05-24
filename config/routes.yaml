@@ -19,6 +19,16 @@ save_menu:
     controller: App\Controller\MenuController::saveMenu
     methods: POST
 
+grocery_list:
+    path: /api/grocerylist
+    controller: App\Controller\GroceryListController::getGroceryList
+    methods: GET
+
+save_grocery_list:
+    path: /api/grocerylist
+    controller: App\Controller\GroceryListController::saveGroceryList
+    methods: POST
+
 signup:
     path: /api/signup
     controller: App\Controller\RegistrationController::signup
