@@ -10,6 +10,10 @@ security:
                 class: App\Entity\User
                 property: username
     firewalls:
+        refresh:
+        pattern:  ^/api/token/refresh
+        stateless: true
+        anonymous: true
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
@@ -42,6 +46,7 @@ security:
         - { path: ^/service/status, roles: PUBLIC_ACCESS }
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/signup, roles: PUBLIC_ACCESS }
+        - { path: ^/api/token/refresh, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/logout, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/api, roles:  IS_AUTHENTICATED_FULLY }
 
