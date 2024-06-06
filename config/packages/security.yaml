@@ -11,9 +11,9 @@ security:
                 property: username
     firewalls:
         refresh:
-        pattern:  ^/api/token/refresh
-        stateless: true
-        anonymous: true
+            pattern:  ^/api/token/refresh
+            stateless: true
+            lazy: true
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
