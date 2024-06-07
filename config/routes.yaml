@@ -40,5 +40,6 @@ api_logout:
     path: /api/logout
 
 api_refresh_token:
-    path:       /api/token/refresh
+    path:       /token/refresh
     controller: gesdinet.jwtrefreshtoken::refresh
+    methods: POST

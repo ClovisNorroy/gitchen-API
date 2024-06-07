@@ -8,15 +8,16 @@ security:
         app_user_provider:
             entity:
                 class: App\Entity\User
-                property: username
+                property: email
     firewalls:
-        refresh:
-            pattern:  ^/api/token/refresh
-            stateless: true
-            lazy: true
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        api_token_refresh:
+            pattern: ^/token/refresh
+            stateless: true
+            refresh_jwt: ~
+            provider: app_user_provider
         login:
             pattern: ^/api/login
             stateless: true
@@ -27,9 +28,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
-            jwt:
-                provider: null
-                authenticator: lexik_jwt_authentication.security.jwt_authenticator
+            jwt: ~
             logout:
                 path: /api/logout
                 delete_cookies: ['BEARER']
@@ -46,7 +45,7 @@ security:
         - { path: ^/service/status, roles: PUBLIC_ACCESS }
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/signup, roles: PUBLIC_ACCESS }
-        - { path: ^/api/token/refresh, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/token/refresh, roles: PUBLIC_ACCESS }
         - { path: ^/logout, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/api, roles:  IS_AUTHENTICATED_FULLY }
 
