@@ -1,0 +1,18 @@
+meta {
+  name: Connection
+  type: http
+  seq: 4
+}
+
+get {
+  url: https://127.0.0.1:8000/api/login_check
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "clovis.norroy@gmail.com",
+    "password": "123456789"
+  }
+}
