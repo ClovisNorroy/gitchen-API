@@ -9,6 +9,15 @@ service_status:
     controller: App\Controller\ServiceStatusController::ping
     methods: GET
 
+scrape_recipe:
+    path: /api/scrape
+    controller: App\Controller\RecipeController::scrape
+
+save_recipe:
+    path: /api/recipe
+    controller: App\Controller\RecipeController::saveNewRecipe
+    methods: POST
+
 menu:
     path: /api/menu
     controller: App\Controller\MenuController::getMenu

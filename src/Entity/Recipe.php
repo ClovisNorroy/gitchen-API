@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\RecipeRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -23,14 +21,15 @@ class Recipe
     private ?string $instructions = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $unverified_ingredients = null;
+    private ?string $ingredients = null;
 
-    #[ORM\ManyToMany(targetEntity: Ingredient::class)]
-    private Collection $ingredients;
+    #[ORM\OneToOne(inversedBy: 'recipe', cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $User = null;
 
     public function __construct()
     {
-        $this->ingredients = new ArrayCollection();
+        
     }
 
     public function getId(): ?int
@@ -69,38 +68,26 @@ class Recipe
         return $this;
     }
 
-    public function getUnverifiedIngredients(): ?string
-    {
-        return $this->unverified_ingredients;
-    }
-
-    public function setUnverifiedIngredients(?string $unverified_ingredients): static
-    {
-        $this->unverified_ingredients = $unverified_ingredients;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Ingredient>
-     */
-    public function getIngredients(): Collection
+    public function getIngredients(): ?string
     {
         return $this->ingredients;
     }
 
-    public function addIngredient(Ingredient $ingredient): static
+    public function setIngredients(?string $ingredients): static
     {
-        if (!$this->ingredients->contains($ingredient)) {
-            $this->ingredients->add($ingredient);
-        }
+        $this->ingredients = $ingredients;
 
         return $this;
     }
 
-    public function removeIngredient(Ingredient $ingredient): static
+    public function getUser(): ?User
     {
-        $this->ingredients->removeElement($ingredient);
+        return $this->User;
+    }
+
+    public function setUser(User $User): static
+    {
+        $this->User = $User;
 
         return $this;
     }

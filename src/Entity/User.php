@@ -39,6 +39,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: GroceryList::class, mappedBy: 'users')]
     private Collection $groceryLists;
 
+    #[ORM\OneToOne(mappedBy: 'User', cascade: ['persist', 'remove'])]
+    private ?Recipe $recipe = null;
+
     public function __construct()
     {
         $this->menu = new ArrayCollection();
@@ -174,6 +177,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->groceryLists->removeElement($groceryList)) {
             $groceryList->removeUser($this);
         }
+
+        return $this;
+    }
+
+    public function getRecipe(): ?Recipe
+    {
+        return $this->recipe;
+    }
+
+    public function setRecipe(Recipe $recipe): static
+    {
+        // set the owning side of the relation if necessary
+        if ($recipe->getUser() !== $this) {
+            $recipe->setUser($this);
+        }
+
+        $this->recipe = $recipe;
 
         return $this;
     }
