@@ -18,15 +18,31 @@ class RecipeController extends AbstractController
 {
     public function scrape(Request $request): JsonResponse
     {
-
         $requestParameters = $request->toArray();
         $URLToScrape = $requestParameters['URL'];
         //TODO : Check URL is Marmitton and correct
         $browser = new HttpBrowser(HttpClient::create());
 
         $crawler = $browser->request('GET', $URLToScrape);
+        //TODO: Two possibilities #recipe-media-viewer-main-picture or #recipe-media-viewer-thumbnail-0
+        //$link = $crawler->filter("#recipe-media-viewer-thumbnail-0")->first();
+        //TODO: Make images private
+        $imageLink = $crawler->filter("#recipe-media-viewer-main-picture")->attr("data-src");
+/*         $curl = curl_init($imageLink);
+        $uniqId = uniqid();
+        $newFile = fopen('../public/images/'.$uniqId.'.jpg', 'wb');
+        curl_setopt($curl, CURLOPT_FILE, $newFile);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_exec($curl);
+        curl_close($curl);
+        fclose($newFile); */
+        $uniqId = uniqid();
+        $img = '../public/images/'.$uniqId.'.jpg';
+        file_put_contents($img, file_get_contents($imageLink));
+
         
-        $title = $crawler->filter("div.main-title")->text();
+        $title = $crawler->filter("h1")->first()->text();
         $ingredientsContent = $crawler->filter('div.card-ingredient-content')->each(function(Crawler $node, $i): string{
             return $node->text();
         });
