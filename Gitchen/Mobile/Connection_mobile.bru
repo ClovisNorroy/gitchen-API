@@ -1,0 +1,22 @@
+meta {
+  name: Connection_mobile
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://127.0.0.1:8000/api/login_check
+  body: json
+  auth: none
+}
+
+headers {
+  User-Agent: phone
+}
+
+body:json {
+  {
+    "username": "clovis.norroy@gmail.com",
+    "password": "123456789"
+  }
+}
