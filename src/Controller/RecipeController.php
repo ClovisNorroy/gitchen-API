@@ -28,18 +28,10 @@ class RecipeController extends AbstractController
         //$link = $crawler->filter("#recipe-media-viewer-thumbnail-0")->first();
         //TODO: Make images private
         $imageLink = $crawler->filter("#recipe-media-viewer-main-picture")->attr("data-src");
-/*         $curl = curl_init($imageLink);
         $uniqId = uniqid();
-        $newFile = fopen('../public/images/'.$uniqId.'.jpg', 'wb');
-        curl_setopt($curl, CURLOPT_FILE, $newFile);
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-        curl_exec($curl);
-        curl_close($curl);
-        fclose($newFile); */
-        $uniqId = uniqid();
-        $img = '../public/images/'.$uniqId.'.jpg';
-        file_put_contents($img, file_get_contents($imageLink));
+        $imagePath = '../public/images/'.$uniqId.'.jpg';
+        $recipeImage = file_get_contents($imageLink);
+        file_put_contents($imagePath, $recipeImage);
 
         
         $title = $crawler->filter("h1")->first()->text();
@@ -52,7 +44,9 @@ class RecipeController extends AbstractController
             return  preg_replace('/Étape\s[1-9]*/', '', $text);
         });
 
-        return new JsonResponse(array("title" => $title, "ingredients" => $ingredientsContent, "instructions" => $stepList), Response::HTTP_OK);
+        return new JsonResponse(array("title" => $title,
+        "ingredients" => $ingredientsContent, "instructions" => $stepList,
+        "imagePath" => $imagePath, "image" => base64_encode($recipeImage)), Response::HTTP_OK);
     }
 
     public function saveNewRecipe(Request $request, EntityManagerInterface $entityManager): Response
