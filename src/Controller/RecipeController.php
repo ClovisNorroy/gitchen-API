@@ -29,7 +29,7 @@ class RecipeController extends AbstractController
         //TODO: Make images private
         $imageLink = $crawler->filter("#recipe-media-viewer-main-picture")->attr("data-src");
         $uniqId = uniqid();
-        $imagePath = '../public/images/'.$uniqId.'.jpg';
+        $imagePath = '../public/images/temp/'.$uniqId.'.jpg';
         $recipeImage = file_get_contents($imageLink);
         file_put_contents($imagePath, $recipeImage);
 
@@ -46,7 +46,7 @@ class RecipeController extends AbstractController
 
         return new JsonResponse(array("title" => $title,
         "ingredients" => $ingredientsContent, "instructions" => $stepList,
-        "imagePath" => $imagePath, "image" => base64_encode($recipeImage)), Response::HTTP_OK);
+        "image" => base64_encode($recipeImage)), Response::HTTP_OK);
     }
 
     public function saveNewRecipe(Request $request, EntityManagerInterface $entityManager): Response
