@@ -28,11 +28,7 @@ class RecipeController extends AbstractController
         //$link = $crawler->filter("#recipe-media-viewer-thumbnail-0")->first();
         //TODO: Make images private
         $imageLink = $crawler->filter("#recipe-media-viewer-main-picture")->attr("data-src");
-        $uniqId = uniqid();
-        $imagePath = '../public/images/temp/'.$uniqId.'.jpg';
         $recipeImage = file_get_contents($imageLink);
-        file_put_contents($imagePath, $recipeImage);
-
         
         $title = $crawler->filter("h1")->first()->text();
         $ingredientsContent = $crawler->filter('div.card-ingredient-content')->each(function(Crawler $node, $i): string{
@@ -51,6 +47,7 @@ class RecipeController extends AbstractController
 
     public function saveNewRecipe(Request $request, EntityManagerInterface $entityManager): Response
     {
+        $uniqId = uniqid();
         $dataNewRecipe = $request->toArray();
         //TODO: Check data
         $currentUser = $this->getUser();
@@ -58,6 +55,11 @@ class RecipeController extends AbstractController
         $newRecipe->setName($dataNewRecipe["title"]);
         $newRecipe->setIngredients($dataNewRecipe["ingredients"]);
         $newRecipe->setInstructions($dataNewRecipe["instructions"]);
+        if(!file_exists('../public/images/'.$currentUser->getUserIdentifier())){
+            mkdir('../public/images/'.$currentUser->getUserIdentifier(), 0777, false);
+        }
+        file_put_contents('../public/images/'.$currentUser->getUserIdentifier()."/".$uniqId.".jpg", base64_decode($dataNewRecipe["image"]));
+        $newRecipe->setImagePath($currentUser->getUserIdentifier()."/".$uniqId.".jpg");
         $newRecipe->setUser($currentUser);
         $entityManager->persist($newRecipe);
         $entityManager->flush();
