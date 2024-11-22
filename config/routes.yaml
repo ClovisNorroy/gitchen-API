@@ -9,6 +9,11 @@ service_status:
     controller: App\Controller\ServiceStatusController::ping
     methods: GET
 
+get_recipes:
+    path: /api/recipes
+    controller: App\Controller\RecipeController::getUserRecipes
+    methods: GET
+
 scrape_recipe:
     path: /api/scrape
     controller: App\Controller\RecipeController::scrape

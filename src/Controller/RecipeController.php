@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\Recipe;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\DomCrawler\Crawler;
@@ -16,6 +17,21 @@ use Symfony\Component\HttpFoundation\Request;
 
 class RecipeController extends AbstractController
 {
+
+    public function getUserRecipes(EntityManagerInterface $entityManager): JsonResponse{
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $userId= $user->getId();
+        $query = $entityManager->createQuery(
+            'SELECT r.id, r.name, r.instructions, r.ingredients, r.imagePath FROM App\Entity\Recipe r
+            WHERE r.User = :userID
+            ORDER BY r.name'
+        )->setParameter('userID', $userId);
+        $recipes = $query->getResult();
+        return new JsonResponse($recipes, 200);
+
+    }
+
     public function scrape(Request $request): JsonResponse
     {
         $requestParameters = $request->toArray();
