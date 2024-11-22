@@ -66,15 +66,17 @@ class RecipeController extends AbstractController
         $uniqId = uniqid();
         $dataNewRecipe = $request->toArray();
         //TODO: Check data
+        /** @var \App\Entity\User $currentUser */
         $currentUser = $this->getUser();
+        $currentUserID = $currentUser->getId();
         $newRecipe = new Recipe();
         $newRecipe->setName($dataNewRecipe["title"]);
         $newRecipe->setIngredients($dataNewRecipe["ingredients"]);
         $newRecipe->setInstructions($dataNewRecipe["instructions"]);
-        if(!file_exists('../public/images/'.$currentUser->getUserIdentifier())){
-            mkdir('../public/images/'.$currentUser->getUserIdentifier(), 0777, false);
+        if(!file_exists('../public/images/user_'.$currentUserID)){
+            mkdir('../public/images/user_'.$currentUserID, 0777, false);
         }
-        file_put_contents('../public/images/'.$currentUser->getUserIdentifier()."/".$uniqId.".jpg", base64_decode($dataNewRecipe["image"]));
+        file_put_contents('../public/images/user_'.$currentUserID."/".$uniqId.".jpg", base64_decode($dataNewRecipe["image"]));
         $newRecipe->setImagePath($currentUser->getUserIdentifier()."/".$uniqId.".jpg");
         $newRecipe->setUser($currentUser);
         $entityManager->persist($newRecipe);
