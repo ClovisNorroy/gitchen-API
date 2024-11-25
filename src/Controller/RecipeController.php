@@ -17,6 +17,20 @@ use Symfony\Component\HttpFoundation\Request;
 
 class RecipeController extends AbstractController
 {
+    /**
+     * @var string $originalImageData decoded base64 image
+     * @var string $newImageFilePath filepath for the resized image
+     */
+    private function createResizedImage($originalImageData, $newImageFilePath){
+        
+        $originalImage = imagecreatefromstring($originalImageData);
+        $originalImageWidth = imagesx($originalImage);
+        $originalImageHeight = imagesy($originalImage);
+        $resizedRecipeImage = imagecreatetruecolor(225, 225);
+        imagecopyresampled($resizedRecipeImage, $originalImage, 0, 0, 0, 0, 225, 225, $originalImageWidth, $originalImageHeight);
+        //file_put_contents($newImageFilePath,$resizedRecipeImage);
+        imagejpeg($resizedRecipeImage, $newImageFilePath, 90);
+    }
 
     public function getUserRecipes(EntityManagerInterface $entityManager): JsonResponse{
         /** @var \App\Entity\User $user */
@@ -65,10 +79,13 @@ class RecipeController extends AbstractController
     {
         $uniqId = uniqid();
         $dataNewRecipe = $request->toArray();
+        $recipeImageData = base64_decode($dataNewRecipe["image"]);
+        
         //TODO: Check data
         /** @var \App\Entity\User $currentUser */
         $currentUser = $this->getUser();
         $currentUserID = $currentUser->getId();
+        
         $newRecipe = new Recipe();
         $newRecipe->setName($dataNewRecipe["title"]);
         $newRecipe->setIngredients($dataNewRecipe["ingredients"]);
@@ -76,7 +93,8 @@ class RecipeController extends AbstractController
         if(!file_exists('../public/images/user_'.$currentUserID)){
             mkdir('../public/images/user_'.$currentUserID, 0777, false);
         }
-        file_put_contents('../public/images/user_'.$currentUserID."/".$uniqId.".jpg", base64_decode($dataNewRecipe["image"]));
+        file_put_contents('../public/images/user_'.$currentUserID."/".$uniqId.".jpg", $recipeImageData);
+        $this->createResizedImage($recipeImageData, '../public/images/user_'.$currentUserID."/".$uniqId."_mini.jpg");
         $newRecipe->setImagePath($currentUser->getUserIdentifier()."/".$uniqId.".jpg");
         $newRecipe->setUser($currentUser);
         $entityManager->persist($newRecipe);
