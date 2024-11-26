@@ -85,17 +85,18 @@ class RecipeController extends AbstractController
         /** @var \App\Entity\User $currentUser */
         $currentUser = $this->getUser();
         $currentUserID = $currentUser->getId();
-        
+        $recipeImageFolderPath = '../public/images/user_'.$currentUserID;
+        $recipeImageFilePath = '../public/images/user_'.$currentUserID."/".$uniqId;
         $newRecipe = new Recipe();
         $newRecipe->setName($dataNewRecipe["title"]);
         $newRecipe->setIngredients($dataNewRecipe["ingredients"]);
         $newRecipe->setInstructions($dataNewRecipe["instructions"]);
-        if(!file_exists('../public/images/user_'.$currentUserID)){
-            mkdir('../public/images/user_'.$currentUserID, 0777, false);
+        if(!file_exists($recipeImageFolderPath)){
+            mkdir($recipeImageFolderPath, 0777, false);
         }
-        file_put_contents('../public/images/user_'.$currentUserID."/".$uniqId.".jpg", $recipeImageData);
-        $this->createResizedImage($recipeImageData, '../public/images/user_'.$currentUserID."/".$uniqId."_mini.jpg");
-        $newRecipe->setImagePath($currentUser->getUserIdentifier()."/".$uniqId.".jpg");
+        file_put_contents($recipeImageFilePath.".jpg", $recipeImageData);
+        $this->createResizedImage($recipeImageData, $recipeImageFilePath."_mini.jpg");
+        $newRecipe->setImagePath($recipeImageFilePath.".jpg");
         $newRecipe->setUser($currentUser);
         $entityManager->persist($newRecipe);
         $entityManager->flush();
