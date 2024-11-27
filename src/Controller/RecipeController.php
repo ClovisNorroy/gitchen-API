@@ -41,8 +41,24 @@ class RecipeController extends AbstractController
             WHERE r.User = :userID
             ORDER BY r.name'
         )->setParameter('userID', $userId);
+        /**
+         * @var array $recipes
+         */
         $recipes = $query->getResult();
-        return new JsonResponse($recipes, 200);
+
+        $recipesWithImages = array_map(function ($recipe) {
+            /** @var \App\Entity\User $user */
+            $user = $this->getUser();
+            $userId= $user->getId();
+            $recipe['ingredients'] = explode(';', $recipe['ingredients']);
+            $recipeImage = file_get_contents('../public/images/user_'.$userId.'/'.$recipe["imagePath"].'.jpg');
+            $recipeImageMini = file_get_contents('../public/images/user_'.$userId.'/'.$recipe["imagePath"].'_mini.jpg');
+            $recipe['image'] = base64_encode($recipeImage);
+            $recipe['image_mini'] = base64_encode($recipeImageMini);
+            return $recipe;
+        }, $recipes);
+
+        return new JsonResponse($recipesWithImages, 200);
 
     }
 
@@ -96,7 +112,7 @@ class RecipeController extends AbstractController
         }
         file_put_contents($recipeImageFilePath.".jpg", $recipeImageData);
         $this->createResizedImage($recipeImageData, $recipeImageFilePath."_mini.jpg");
-        $newRecipe->setImagePath($recipeImageFilePath.".jpg");
+        $newRecipe->setImagePath($uniqId);
         $newRecipe->setUser($currentUser);
         $entityManager->persist($newRecipe);
         $entityManager->flush();
