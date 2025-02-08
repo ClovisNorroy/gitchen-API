@@ -14,6 +14,8 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Panther\Client;
+use Symfony\Component\Panther\PantherTestCase;
 
 class RecipeController extends AbstractController
 {
@@ -64,28 +66,99 @@ class RecipeController extends AbstractController
 
     public function scrape(Request $request): JsonResponse
     {
+        $filters = [
+            'www.marmiton.org' => [
+                'title' => 'div.main-title > h1',
+                'ingredients' => 'div.card-ingredient',
+                'instructions' => 'div.recipe-step-list__container p',
+                'image' => ['img.recipe-media-viewer-thumbnail-0', 'src'],
+                'imageBackup' => ['img#recipe-media-viewer-main-picture', 'src']
+            ],
+            'cuisine.journaldesfemmes.fr' => [
+                'title' => 'h1.app_recipe_title_page',
+                'ingredients' => '.app_recipe_ing_title',
+                'instructions' => 'ol li div.grid_last',
+                'image' => ['img.bu_cuisine_img_noborder', 'src'],
+                'imageBackup' => ['picture > source', 'srcset']
+            ],
+            'www.750g.com' => [
+                'title' => 'header > span.u-title-page',
+                'ingredients' => 'li.recipe-ingredients-item',
+                'instructions' => 'div.recipe-steps-text > p',
+                'image' => ['div.glide__slide.recipe-cover:nth-of-type(2) picture:nth-of-type(2) img', 'src'],
+                'imageBackup' => ['div.glide__slide.recipe-cover:nth-of-type(2) picture:nth-of-type(2) img', 'src']
+            ],
+            'www.papillesetpupilles.fr' => [
+                'title' => 'h1.title',
+                'ingredients' => 'div.post_content > ul > li',
+                'instructions' => 'div.post_content p',
+                'image' => ['div.post_content > div:nth-child(1) > img.size-full', 'src'],
+                'imageBackup' => ['div.post_content > div:nth-child(1) > img.size-full', 'src']
+            ],
+            'www.cuisineaz.com' => [
+                'title' => 'h1.recipe-title',
+                'ingredients' => 'li.ingredient_item',
+                'instructions' => 'ul.preparation_steps > li.preparation_step > p',
+                'image' => ['section#recipe_image > picture > img', 'src'],
+                'imageBackup' => []
+            ],
+            'www.meilleurduchef.com' => [
+                'title' => 'div#page-content h1',
+                'ingredients' => 'li.ingredient',
+                'instructions' => 'div.instruction p',
+                'image' => ['div.media-display img:nth-child(1)', 'src'],
+                'imageBackup' => []
+            ],
+            'www.hervecuisine.com' => [
+                'title' => 'h1.post-title',
+                'ingredients' => 'div.recipe-ingredient-list > ul li',
+                'instructions' => 'div.recipe-steps > ul li',
+                'image' => ['img.attachment-main-full.size-main-full.wp-post-image ', 'data-src'],
+                'imageBackup' => []
+            ]
+        ];
+
         $requestParameters = $request->toArray();
+        $host = parse_url($requestParameters['URL'], PHP_URL_HOST);
+        if(!array_key_exists($host, $filters)){
+            return new JsonResponse("Missing host", Response::HTTP_EXPECTATION_FAILED);
+        }
         $URLToScrape = $requestParameters['URL'];
-        //TODO : Check URL is Marmitton and correct
-        $browser = new HttpBrowser(HttpClient::create());
-
-        $crawler = $browser->request('GET', $URLToScrape);
-        //TODO: Two possibilities #recipe-media-viewer-main-picture or #recipe-media-viewer-thumbnail-0
-        //$link = $crawler->filter("#recipe-media-viewer-thumbnail-0")->first();
-        //TODO: Make images private
-        $imageLink = $crawler->filter("#recipe-media-viewer-main-picture")->attr("data-src");
-        $recipeImage = file_get_contents($imageLink);
+        $pantherClient = Client::createChromeClient();
+        $pantherCrawler = $pantherClient->request('GET', $URLToScrape);
+        sleep(1);
+        $browserKitClient = new HttpBrowser(HttpClient::create());
+        $browserKitCrawler = $browserKitClient->request('GET', $URLToScrape);
         
-        $title = $crawler->filter("h1")->first()->text();
-        $ingredientsContent = $crawler->filter('div.card-ingredient-content')->each(function(Crawler $node, $i): string{
-            return $node->text();
+        // For Marmitton, sometimes there is a video instead of a main picture, we will take the first thumbnail instead
+        $imageCrawler = $pantherCrawler->filter($filters[$host]['image'][0]);
+        if($imageCrawler->count() > 0){
+            $imageLink = $imageCrawler->attr($filters[$host]['image'][1]);
+        }
+        else{
+            $imageLink = $pantherCrawler->filter($filters[$host]['imageBackup'][0])->attr($filters[$host]['imageBackup'][1]);
+        }
+        if(strcmp($host, 'www.meilleurduchef.com')){
+            $recipeImage = file_get_contents('https:'.$imageLink);
+        }
+        else {
+            $recipeImage = file_get_contents('$imageLink');
+        }
+
+        file_put_contents("recipeImage.jpg", $recipeImage);
+        $title = $browserKitCrawler->filter($filters[$host]['title'])->first()->text();
+
+        // Avoid being too quick to simulate human behavior
+        sleep(1);
+        $ingredientList = $browserKitCrawler->filter($filters[$host]['ingredients'])->each(function(Crawler $node, $i): string{
+            return $node->text("no value");
         });
 
-        $stepList = $crawler->filter('div.recipe-step-list__container')->each(function(Crawler $node, $i): string{
-            $text = $node->text();
-            return  preg_replace('/Étape\s[1-9]*/', '', $text);
+        $instructionsList = $browserKitCrawler->filter($filters[$host]['instructions'])->each(function(Crawler $node, $i): string{
+            return $text = $node->text();
         });
 
+        return new JsonResponse("OK", Response::HTTP_OK);
         return new JsonResponse(array("title" => $title,
         "ingredients" => $ingredientsContent, "instructions" => $stepList,
         "image" => base64_encode($recipeImage)), Response::HTTP_OK);

@@ -1,0 +1,17 @@
+meta {
+  name: scrapeRecipe
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/api/scrape
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "URL" : "https://www.meilleurduchef.com/fr/recette/pain-bagels.html"
+  }
+}
