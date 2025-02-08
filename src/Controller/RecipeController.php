@@ -88,7 +88,7 @@ class RecipeController extends AbstractController
                 'image' => ['div.glide__slide.recipe-cover:nth-of-type(2) picture:nth-of-type(2) img', 'src'],
                 'imageBackup' => ['div.glide__slide.recipe-cover:nth-of-type(2) picture:nth-of-type(2) img', 'src']
             ],
-            'www.papillesetpupilles.fr' => [
+            'www.papillesetpupilles.fr' => [ // Blocked
                 'title' => 'h1.title',
                 'ingredients' => 'div.post_content > ul > li',
                 'instructions' => 'div.post_content p',
@@ -129,7 +129,17 @@ class RecipeController extends AbstractController
         sleep(1);
         $browserKitClient = new HttpBrowser(HttpClient::create());
         $browserKitCrawler = $browserKitClient->request('GET', $URLToScrape);
-        
+        $pantherClient->takeScreenshot('tiram.png');
+
+        $titleCrawler = $browserKitCrawler->filter($filters[$host]['title']);
+
+        if($titleCrawler->count()>0){
+            $title = $titleCrawler->first()->text();
+        }
+        else{
+            return new JsonResponse("Scraping is impossible", Response::HTTP_EXPECTATION_FAILED); 
+        }
+
         // For Marmitton, sometimes there is a video instead of a main picture, we will take the first thumbnail instead
         $imageCrawler = $pantherCrawler->filter($filters[$host]['image'][0]);
         if($imageCrawler->count() > 0){
@@ -146,7 +156,7 @@ class RecipeController extends AbstractController
         }
 
         file_put_contents("recipeImage.jpg", $recipeImage);
-        $title = $browserKitCrawler->filter($filters[$host]['title'])->first()->text();
+
 
         // Avoid being too quick to simulate human behavior
         sleep(1);
