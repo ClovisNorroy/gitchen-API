@@ -71,7 +71,7 @@ class RecipeController extends AbstractController
                 'title' => 'div.main-title > h1',
                 'ingredients' => 'div.card-ingredient',
                 'instructions' => 'div.recipe-step-list__container p',
-                'image' => ['img.recipe-media-viewer-thumbnail-0', 'src'],
+                'image' => ['img#recipe-media-viewer-thumbnail-0', 'src'],
                 'imageBackup' => ['img#recipe-media-viewer-main-picture', 'src']
             ],
             'cuisine.journaldesfemmes.fr' => [
@@ -148,11 +148,11 @@ class RecipeController extends AbstractController
         else{
             $imageLink = $pantherCrawler->filter($filters[$host]['imageBackup'][0])->attr($filters[$host]['imageBackup'][1]);
         }
-        if(strcmp($host, 'www.meilleurduchef.com')){
+        if(strcmp($host, 'www.meilleurduchef.com') == 0){
             $recipeImage = file_get_contents('https:'.$imageLink);
         }
         else {
-            $recipeImage = file_get_contents('$imageLink');
+            $recipeImage = file_get_contents($imageLink);
         }
 
         file_put_contents("recipeImage.jpg", $recipeImage);
@@ -168,9 +168,12 @@ class RecipeController extends AbstractController
             return $text = $node->text();
         });
 
-        return new JsonResponse("OK", Response::HTTP_OK);
+        $ingredients = array_map(function ($ingredient, $index){ 
+            return ['id'=> $index, 'item' => $ingredient];
+        }, $ingredientList, array_keys($ingredientList));
+
         return new JsonResponse(array("title" => $title,
-        "ingredients" => $ingredientsContent, "instructions" => $stepList,
+        "ingredients" => $ingredients, "instructions" => $instructionsList,
         "image" => base64_encode($recipeImage)), Response::HTTP_OK);
     }
 
