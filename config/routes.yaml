@@ -10,8 +10,13 @@ service_status:
     methods: GET
 
 get_recipes:
-    path: /api/recipes
-    controller: App\Controller\RecipeController::getUserRecipes
+    path: /api/recipe
+    controller: App\Controller\RecipeController::getUserRecipe
+    methods: GET
+
+get_recipe:
+    path: /api/recipe/{recipeid}
+    controller: App\Controller\RecipeController::getUserRecipe
     methods: GET
 
 scrape_recipe:
@@ -55,5 +60,4 @@ api_logout:
 
 api_refresh_token:
     path:       /token/refresh
-    controller: gesdinet.jwtrefreshtoken::refresh
     methods: POST

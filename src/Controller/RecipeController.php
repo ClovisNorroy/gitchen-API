@@ -34,33 +34,41 @@ class RecipeController extends AbstractController
         imagejpeg($resizedRecipeImage, $newImageFilePath, 90);
     }
 
-    public function getUserRecipes(EntityManagerInterface $entityManager): JsonResponse{
+    public function getUserRecipe(Request $request, EntityManagerInterface $entityManager): JsonResponse{
+        $recipeID = $request->get('recipeid');
+        $conditionalParameter = $recipeID ? ' AND r.id = :recipeID ' : '';
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
         $userId= $user->getId();
         $query = $entityManager->createQuery(
             'SELECT r.id, r.name, r.instructions, r.ingredients, r.imagePath FROM App\Entity\Recipe r
-            WHERE r.User = :userID
+            WHERE r.User = :userID'.$conditionalParameter.'
             ORDER BY r.name'
         )->setParameter('userID', $userId);
+        if($recipeID){
+            $query->setParameter('recipeID', $recipeID);
+        }
         /**
          * @var array $recipes
          */
         $recipes = $query->getResult();
-
-        $recipesWithImages = array_map(function ($recipe) {
-            /** @var \App\Entity\User $user */
-            $user = $this->getUser();
-            $userId= $user->getId();
-            $recipe['ingredients'] = explode(';', $recipe['ingredients']);
-            $recipeImage = file_get_contents('../public/images/user_'.$userId.'/'.$recipe["imagePath"].'.jpg');
-            $recipeImageMini = file_get_contents('../public/images/user_'.$userId.'/'.$recipe["imagePath"].'_mini.jpg');
-            $recipe['image'] = base64_encode($recipeImage);
-            $recipe['image_mini'] = base64_encode($recipeImageMini);
-            return $recipe;
-        }, $recipes);
-
-        return new JsonResponse($recipesWithImages, 200);
+        if(count($recipes)){
+            $recipesWithImages = array_map(function ($recipe) {
+                /** @var \App\Entity\User $user */
+                $user = $this->getUser();
+                $userId= $user->getId();
+                $recipe['ingredients'] = explode(';', $recipe['ingredients']);
+                $recipe['instructions'] = explode(';', $recipe['instructions']);
+                $recipeImage = file_get_contents('../public/images/user_'.$userId.'/'.$recipe["imagePath"].'.png');
+                $recipe['image'] = base64_encode($recipeImage);
+                return $recipe;
+            }, $recipes);
+    
+            return new JsonResponse($recipesWithImages, 200);
+        }
+        else{
+            return new JsonResponse("No data found", Response::HTTP_NO_CONTENT);
+        }
 
     }
 
@@ -71,8 +79,8 @@ class RecipeController extends AbstractController
                 'title' => 'div.main-title > h1',
                 'ingredients' => 'div.card-ingredient',
                 'instructions' => 'div.recipe-step-list__container p',
-                'image' => ['img#recipe-media-viewer-thumbnail-0', 'src'],
-                'imageBackup' => ['img#recipe-media-viewer-main-picture', 'src']
+                'image' => ['img#recipe-media-viewer-thumbnail-0', 'data-src'],
+                'imageBackup' => ['img#recipe-media-viewer-main-picture', 'data-src']
             ],
             'cuisine.journaldesfemmes.fr' => [
                 'title' => 'h1.app_recipe_title_page',
@@ -124,12 +132,14 @@ class RecipeController extends AbstractController
             return new JsonResponse("Missing host", Response::HTTP_EXPECTATION_FAILED);
         }
         $URLToScrape = $requestParameters['URL'];
-        $pantherClient = Client::createChromeClient();
-        $pantherCrawler = $pantherClient->request('GET', $URLToScrape);
+        //$pantherClient = Client::createFirefoxClient();
+        //$pantherClient->request('GET', $URLToScrape);
+        //$pantherCrawler = $pantherClient->waitFor($filters[$host]['image'][0]);
+        //$pantherCrawler = $pantherClient->request('GET', $URLToScrape);
         sleep(1);
         $browserKitClient = new HttpBrowser(HttpClient::create());
         $browserKitCrawler = $browserKitClient->request('GET', $URLToScrape);
-        $pantherClient->takeScreenshot('tiram.png');
+        //$pantherClient->takeScreenshot('tiram.png');
 
         $titleCrawler = $browserKitCrawler->filter($filters[$host]['title']);
 
@@ -141,12 +151,12 @@ class RecipeController extends AbstractController
         }
 
         // For Marmitton, sometimes there is a video instead of a main picture, we will take the first thumbnail instead
-        $imageCrawler = $pantherCrawler->filter($filters[$host]['image'][0]);
+        $imageCrawler = $browserKitCrawler->filter($filters[$host]['image'][0]);
         if($imageCrawler->count() > 0){
             $imageLink = $imageCrawler->attr($filters[$host]['image'][1]);
         }
         else{
-            $imageLink = $pantherCrawler->filter($filters[$host]['imageBackup'][0])->attr($filters[$host]['imageBackup'][1]);
+            $imageLink = $browserKitCrawler->filter($filters[$host]['imageBackup'][0])->attr($filters[$host]['imageBackup'][1]);
         }
         if(strcmp($host, 'www.meilleurduchef.com') == 0){
             $recipeImage = file_get_contents('https:'.$imageLink);
@@ -172,8 +182,12 @@ class RecipeController extends AbstractController
             return ['id'=> $index, 'item' => $ingredient];
         }, $ingredientList, array_keys($ingredientList));
 
-        return new JsonResponse(array("title" => $title,
-        "ingredients" => $ingredients, "instructions" => $instructionsList,
+        $instructions = array_map(function ($ingredient, $index){ 
+            return ['id'=> $index, 'item' => $ingredient];
+        }, $instructionsList, array_keys($instructionsList));
+
+        return new JsonResponse(array("name" => $title,
+        "ingredients" => $ingredients, "instructions" => $instructions,
         "image" => base64_encode($recipeImage)), Response::HTTP_OK);
     }
 
@@ -181,8 +195,8 @@ class RecipeController extends AbstractController
     {
         $uniqId = uniqid();
         $dataNewRecipe = $request->toArray();
-        $recipeImageData = base64_decode($dataNewRecipe["image"]);
-        
+        $data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $dataNewRecipe['image']));
+        $image = base64_decode($dataNewRecipe['image']);
         //TODO: Check data
         /** @var \App\Entity\User $currentUser */
         $currentUser = $this->getUser();
@@ -190,14 +204,13 @@ class RecipeController extends AbstractController
         $recipeImageFolderPath = '../public/images/user_'.$currentUserID;
         $recipeImageFilePath = '../public/images/user_'.$currentUserID."/".$uniqId;
         $newRecipe = new Recipe();
-        $newRecipe->setName($dataNewRecipe["title"]);
+        $newRecipe->setName($dataNewRecipe["name"]);
         $newRecipe->setIngredients($dataNewRecipe["ingredients"]);
         $newRecipe->setInstructions($dataNewRecipe["instructions"]);
         if(!file_exists($recipeImageFolderPath)){
             mkdir($recipeImageFolderPath, 0777, false);
         }
-        file_put_contents($recipeImageFilePath.".jpg", $recipeImageData);
-        $this->createResizedImage($recipeImageData, $recipeImageFilePath."_mini.jpg");
+        file_put_contents($recipeImageFilePath.'.png', $data);
         $newRecipe->setImagePath($uniqId);
         $newRecipe->setUser($currentUser);
         $entityManager->persist($newRecipe);
