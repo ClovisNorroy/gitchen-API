@@ -23,9 +23,8 @@ class Recipe
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $ingredients = null;
 
-    #[ORM\OneToOne(inversedBy: 'recipe', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $User = null;
+    #[ORM\ManyToOne(inversedBy: 'recipes')]
+    private ?User $user = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $imagePath = null;
@@ -85,12 +84,12 @@ class Recipe
 
     public function getUser(): ?User
     {
-        return $this->User;
+        return $this->user;
     }
 
     public function setUser(User $User): static
     {
-        $this->User = $User;
+        $this->user = $User;
 
         return $this;
     }
