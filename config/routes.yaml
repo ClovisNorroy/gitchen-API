@@ -11,12 +11,12 @@ service_status:
 
 get_recipes:
     path: /api/recipe
-    controller: App\Controller\RecipeController::getUserRecipe
+    controller: App\Controller\RecipeController::getUserRecipes
     methods: GET
 
 get_recipe:
     path: /api/recipe/{recipeid}
-    controller: App\Controller\RecipeController::getUserRecipe
+    controller: App\Controller\RecipeController::getRecipe
     methods: GET
 
 scrape_recipe:
@@ -27,6 +27,11 @@ save_recipe:
     path: /api/recipe
     controller: App\Controller\RecipeController::saveNewRecipe
     methods: POST
+
+delete_recipe:
+    path: /api/recipe/{recipeid}
+    controller: App\Controller\RecipeController::deleteRecipe
+    methods: DELETE
 
 menu:
     path: /api/menu

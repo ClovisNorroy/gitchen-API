@@ -5,7 +5,9 @@ namespace App\Controller;
 //require(__DIR__.'/../../Serices/WebScraping.php');
 
 use App\Entity\Recipe;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Dom\Entity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,42 +36,75 @@ class RecipeController extends AbstractController
         imagejpeg($resizedRecipeImage, $newImageFilePath, 90);
     }
 
-    public function getUserRecipe(Request $request, EntityManagerInterface $entityManager): JsonResponse{
-        $recipeID = $request->get('recipeid');
-        $conditionalParameter = $recipeID ? ' AND r.id = :recipeID ' : '';
+    public function getUserRecipes(EntityManagerInterface $entityManager): JsonResponse
+    {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
         $userId= $user->getId();
-        $query = $entityManager->createQuery(
-            'SELECT r.id, r.name, r.instructions, r.ingredients, r.imagePath FROM App\Entity\Recipe r
-            WHERE r.User = :userID'.$conditionalParameter.'
-            ORDER BY r.name'
-        )->setParameter('userID', $userId);
-        if($recipeID){
-            $query->setParameter('recipeID', $recipeID);
-        }
-        /**
-         * @var array $recipes
-         */
-        $recipes = $query->getResult();
+        $recipes = $user->getRecipes();
+        $recipes = $recipes->toArray();
         if(count($recipes)){
-            $recipesWithImages = array_map(function ($recipe) {
-                /** @var \App\Entity\User $user */
-                $user = $this->getUser();
-                $userId= $user->getId();
-                $recipe['ingredients'] = explode(';', $recipe['ingredients']);
-                $recipe['instructions'] = explode(';', $recipe['instructions']);
-                $recipeImage = file_get_contents('../public/images/user_'.$userId.'/'.$recipe["imagePath"].'.png');
-                $recipe['image'] = base64_encode($recipeImage);
-                return $recipe;
-            }, $recipes);
-    
-            return new JsonResponse($recipesWithImages, 200);
+            $parsedRecipes = [];
+            foreach($recipes as $recipe){
+                $recipeImage = file_get_contents('../public/images/user_'.$userId.'/'.$recipe->getImagePath().'.png');
+                $parsedRecipes[] = [
+                    'id' => $recipe->getId(),
+                    'name' => $recipe->getName(),
+                    'instructions' => explode(';', $recipe->getInstructions()),
+                    'ingredients' => explode(';', $recipe->getIngredients()),
+                    'image' => base64_encode($recipeImage)
+                ];
+            }
+            return new JsonResponse($parsedRecipes, 200);
         }
         else{
             return new JsonResponse("No data found", Response::HTTP_NO_CONTENT);
         }
+    }
 
+    public function getRecipe(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $recipeID = $request->get('recipeid');
+        /** @var \App\Entity\User $currentUser */
+        $currentUser = $this->getUser();
+        $recipe = $entityManager->getRepository(Recipe::class)->findOneBy([
+            'id' => $recipeID,
+            'user' => $currentUser
+        ]);
+        if($recipe){
+            $recipeImage = file_get_contents('../public/images/user_'.$currentUser->getId().'/'.$recipe->getImagePath().'.png');
+            return new JsonResponse([
+                'id' => $recipe->getId(),
+                'name' => $recipe->getName(),
+                'instructions' => explode(';', $recipe->getInstructions()),
+                'ingredients' => explode(';', $recipe->getIngredients()),
+                'image' => base64_encode($recipeImage)
+            ], 200);
+        }
+        else{
+            return new JsonResponse("Recipe not found", 404);
+        }
+    }
+
+    public function deleteRecipe(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $recipeID = $request->get('recipeid');
+        /** @var \App\Entity\User $currentUser */
+        $currentUser = $this->getUser();
+        $recipe = $entityManager->getRepository(Recipe::class)->findOneBy([
+            'id' => $recipeID,
+            'User' => $currentUser
+        ]);
+        if($recipe){
+            $recipeImagePath = '../public/images/user_'.$currentUser->getId().'/'.$recipe->getImagePath().'.png';
+            unlink($recipeImagePath);
+            $entityManager->remove($recipe);
+            $entityManager->flush();
+            return new Response("Recipe deleted", 200);
+        }
+        else{
+            return new Response("Recipe not found", 404);
+        }
     }
 
     public function scrape(Request $request): JsonResponse
