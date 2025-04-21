@@ -62,6 +62,8 @@ api_login_check:
     path: /api/login_check
 api_logout:
     path: /api/logout
+    controller: App\Controller\AuthController::logout
+    methods: POST
 
 api_refresh_token:
     path:       /token/refresh

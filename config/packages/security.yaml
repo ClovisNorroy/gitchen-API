@@ -29,9 +29,6 @@ security:
             pattern: ^/api
             stateless: true
             jwt: ~
-            logout:
-                path: /api/logout
-                delete_cookies: ['BEARER']
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -46,7 +43,7 @@ security:
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/signup, roles: PUBLIC_ACCESS }
         - { path: ^/token/refresh, roles: PUBLIC_ACCESS }
-        - { path: ^/logout, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^api//logout, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles:  IS_AUTHENTICATED_FULLY }
 
 when@test:
