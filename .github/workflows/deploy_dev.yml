@@ -30,6 +30,7 @@ jobs:
           EXCLUDE: "/dist/, /node_modules/, /vendor/, "
 
       - name: Remove runner's IP from Whitelist
+        if: always()
         run: |
           curl -sm 45 -H'Authorization: cpanel ${{ secrets.REMOTE_USER }}:${{ secrets.o2switch_API_TOKEN }}' \
           'https://${{ secrets.REMOTE_HOST }}:2083/execute/SshWhitelist/remove?address=${{ steps.ip.outputs.ipv4 }}&port=22&direction=out'
