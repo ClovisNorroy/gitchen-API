@@ -10,6 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: get runner's public IP
+        id: ip
+        uses: haythem/public-ip@v1.3
+
+      - name: Whitelist the runner IP
+        run: |
+          curl -sm 45 -H'Authorization: cpanel ${{ secrets.REMOTE_USER }}:${{ secrets.o2switch_API_TOKEN }}' \
+          'https://${{ secrets.REMOTE_HOST }}:2083/execute/SshWhitelist/add?address=${{ steps.ip.outputs.ipv4 }}&port=22&direction=in'
+
       - name: deploy to VPS
         uses: easingthemes/ssh-deploy@main
         with:
@@ -19,3 +28,9 @@ jobs:
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.REMOTE_TARGET }}
           EXCLUDE: "/dist/, /node_modules/"
+
+      - name: Remove runner's IP from Whitelist
+        if: always()
+        run: |
+            curl -sm 45 -H'Authorization: cpanel ${{ secrets.REMOTE_USER }}:${{ secrets.o2switch_API_TOKEN }}' \
+            'https://${{ secrets.REMOTE_HOST }}:2083/execute/SshWhitelist/remove?address=${{ steps.ip.outputs.ipv4 }}&port=22&direction=out'
